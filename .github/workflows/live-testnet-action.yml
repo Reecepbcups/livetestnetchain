@@ -16,6 +16,8 @@ permissions:
   contents: read
   issues: write
 
+# ssh -o StrictHostKeyChecking=no root@95.217.238.29
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -29,7 +31,8 @@ jobs:
         with:
           server-name: "gh-actions-tn-${{github.sha}}"
           server-image: "ubuntu-22.04"
-          server-type: "cpx21"
+          # server-type: "cpx21" # shared
+          server-type: "ccx23" # dedicated
           ssh-key-name: "reece-hetzner"
           delete-server: false
           # may need to do floating IPs for shared use & static IP usage?
@@ -64,9 +67,9 @@ jobs:
       # sudo DEBIAN_FRONTEND=noninteractive apt -y install make golang-1.22 gcc jq bison
       # alias go=/usr/lib/go-1.22/bin/go
       - run: |
-          echo "whoami: $(whoami)"
-          sudo su root
-          echo "whoami: $(whoami)"
+          echo "whoami: $(whoami)" # runner
+          sudo su - root
+          echo "whoami: $(whoami)" # root? pls
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
 
