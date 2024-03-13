@@ -3,6 +3,8 @@ name: testnet
 # typically this would only be on main / tagged releases
 on:
   push:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -10,7 +12,6 @@ concurrency:
 
 env:
     GO_VERSION: 1.21.0
-    TESTNET_FILE: "ibc-testnet" # in the chains/ dir
 
 permissions:
   contents: read
@@ -40,18 +41,12 @@ jobs:
           # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
           hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
 
-      - uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
       - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
-      - run: ssh root@$SERVER_IPV4 touch validate_working
-      - run: ssh root@$SERVER_IPV4 ls
 
-      - name: Set server IP
-        run: echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
-      - name: Set sha
-        run: echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
+      - name: Set server address & git sha hash
+        run: |
+          echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
+          echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
 
       - uses: JasonEtco/create-an-issue@v2.9.2
         env:
@@ -61,51 +56,44 @@ jobs:
             filename: .github/testnet.md
             update_existing: true
 
-      # testnet time
-      # - run: git clone https://github.com/Reecepbcups/livetestnetchain
-      # sudo add-apt-repository ppa:longsleep/golang-backports -y
-      # sudo DEBIAN_FRONTEND=noninteractive apt -y install make golang-1.22 gcc jq bison
-      # alias go=/usr/lib/go-1.22/bin/go
-      - run: |
-          ssh root@$SERVER_IPV4
-          echo "whoami: $(whoami)" # root pls
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
+      - name: executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ env.SERVER_IPV4_ADDR }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            whoami
 
-          # Go install
-          wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz
-          sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
-          echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
-          export PATH=$PATH:/usr/local/go/bin
+            function docker-killall() {
+              docker kill $(docker ps -q)
+            }
 
-          # Docker.
-          # sudo install -m 0755 -d /etc/apt/keyrings
-          # sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          # sudo chmod a+r /etc/apt/keyrings/docker.asc
-          # echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          # sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker.io
+            sudo apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
 
-          sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y containerd.io
-          sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose
-          sudo apt-get update
+            wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz
+            sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
+            echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
+            export PATH=$PATH:/usr/local/go/bin
+            bash # idk if I can use this or not
 
-          # install local-ic
-          wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
-          sudo sudo mv local-ic /usr/bin
+            sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y containerd.io
+            sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose
+            sudo apt-get update
 
-          git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
-          go build
-          sudo mv heighliner /usr/bin && chmod +x /usr/bin/heighliner
+            wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
+            sudo mv local-ic /usr/local/bin
 
-          cd ~/
+            git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
+            go build && chmod +x heighliner
+            sudo mv heighliner /usr/local/bin
 
-          # Clone
-          git clone https://github.com/${{ github.repository }}.git chain && cd chain
+            cd ~/
+            git clone https://github.com/${{ github.repository }}.git chain && cd chain
+            make local-image
 
-          # builds the docker image
-          make local-image
-
-          # start the testnet (run in a screen ?)
-          local-ic chains # just debugging
-          sudo -u root screen -S testnet -d -m local-ic start ${{env.TESTNET_FILE}} --api-address=0.0.0.0 --auth-key=""
-          # sudo -u root screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --auth-key=""
+            # TODO: service file would be 10x better :) (put in ictest local-ic dir for setup too)
+            # auth_key should be a github env secret
+            sudo screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --api-port=8080 --auth-key=""
