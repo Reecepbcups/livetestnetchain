@@ -10,6 +10,7 @@ concurrency:
 
 env:
     GO_VERSION: 1.21.0
+    TESTNET_FILE: "ibc-testnet" # in the chains/ dir
 
 permissions:
   contents: read
@@ -20,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         # TODO: shut down any current instances?
+        # if there is a current instance already running, allow for it to be stopped & re-started? (local-ic not the entire box)
 
       - uses: actions/checkout@v3
 
@@ -55,3 +57,45 @@ jobs:
             assignees: ${{ github.actor }}
             filename: .github/testnet.md
             update_existing: true
+
+      # testnet time
+      # - run: git clone https://github.com/Reecepbcups/livetestnetchain
+      # sudo add-apt-repository ppa:longsleep/golang-backports -y
+      # sudo DEBIAN_FRONTEND=noninteractive apt -y install make golang-1.22 gcc jq bison
+      # alias go=/usr/lib/go-1.22/bin/go
+      - run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison
+
+          # Go install
+          wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz
+          rm -rf /usr/local/go && tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
+          echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
+          export PATH=$PATH:/usr/local/go/bin
+
+          # Docker
+          sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+          # install local-ic
+          wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
+          sudo mv local-ic /usr/local/bin
+
+          git clone https://github.com/strangelove-ventures/heighliner.git
+          go build
+          mv heighliner /usr/local/bin && chmod +x /usr/local/bin/heighliner
+
+          # Clone
+          git clone https://github.com/${{ github.repository }}.git chain && cd chain
+
+          # builds the docker image
+          make local-image
+
+          # start the testnet
+          local-ic chains # just debugging
+          local-ic start ${{env.TESTNET_FILE}}
