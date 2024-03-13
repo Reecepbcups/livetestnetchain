@@ -10,7 +10,6 @@ concurrency:
 
 env:
     GO_VERSION: 1.21.0
-    TESTNET_FILE: "ibc-testnet" # in the chains/ dir
 
 permissions:
   contents: read
@@ -31,8 +30,8 @@ jobs:
         with:
           server-name: "gh-actions-tn-${{github.sha}}"
           server-image: "ubuntu-22.04"
-          server-type: "cpx21" # shared
-          # server-type: "ccx23" # dedicated
+          # server-type: "cpx21" # shared
+          server-type: "ccx23" # dedicated
           ssh-key-name: "reece-hetzner"
           delete-server: false
           # may need to do floating IPs for shared use & static IP usage?
@@ -50,7 +49,7 @@ jobs:
 
       - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
 
-      - name: Set server IP & Sha
+      - name: Set server address & git sha hash
         run: |
           echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
           echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
@@ -65,6 +64,10 @@ jobs:
           script: |
             whoami
 
+            function docker-killall() {
+              docker kill $(docker ps -q)
+            }
+
             sudo apt-get update
             sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
 
@@ -72,6 +75,7 @@ jobs:
             sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
             echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
             export PATH=$PATH:/usr/local/go/bin
+            bash # idk if I can use this or not
 
             sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y containerd.io
             sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose
@@ -80,15 +84,17 @@ jobs:
             wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
             sudo mv local-ic /usr/local/bin
 
-      # - uses: webfactory/ssh-agent@v0.4.1
-      #   with:
-      #     ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+            git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
+            go build && chmod +x heighliner
+            sudo mv heighliner /usr/local/bin
 
-      # testnet time
-      # - run: git clone https://github.com/Reecepbcups/livetestnetchain
-      # sudo add-apt-repository ppa:longsleep/golang-backports -y
-      # sudo DEBIAN_FRONTEND=noninteractive apt -y install make golang-1.22 gcc jq bison
-      # alias go=/usr/lib/go-1.22/bin/go
+            cd ~/
+            git clone https://github.com/${{ github.repository }}.git chain && cd chain
+            make local-image
+
+            # TODO: service file would be 10x better :) (put in ictest local-ic dir for setup too)
+            sudo screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --auth-key=""
+
       # - run: |
       #     echo "whoami: $(whoami)" # root pls
       #     sudo apt-get update
