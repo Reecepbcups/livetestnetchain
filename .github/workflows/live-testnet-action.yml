@@ -67,9 +67,8 @@ jobs:
       # sudo DEBIAN_FRONTEND=noninteractive apt -y install make golang-1.22 gcc jq bison
       # alias go=/usr/lib/go-1.22/bin/go
       - run: |
-          echo "whoami: $(whoami)" # runner
-          sudo su - root
-          echo "whoami: $(whoami)" # root? pls
+          ssh root@$SERVER_IPV4
+          echo "whoami: $(whoami)" # root pls
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
 
@@ -92,11 +91,11 @@ jobs:
 
           # install local-ic
           wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
-          sudo mv local-ic /usr/local/bin
+          sudo mv local-ic /usr/bin
 
           git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
           go build
-          mv heighliner /usr/local/bin && chmod +x /usr/local/bin/heighliner
+          mv heighliner /usr/bin && chmod +x /usr/bin/heighliner
 
           cd ~/
 
