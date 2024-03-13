@@ -31,8 +31,8 @@ jobs:
         with:
           server-name: "gh-actions-tn-${{github.sha}}"
           server-image: "ubuntu-22.04"
-          # server-type: "cpx21" # shared
-          server-type: "ccx23" # dedicated
+          server-type: "cpx21" # shared
+          # server-type: "ccx23" # dedicated
           ssh-key-name: "reece-hetzner"
           delete-server: false
           # may need to do floating IPs for shared use & static IP usage?
@@ -58,7 +58,7 @@ jobs:
       - name: executing remote ssh commands using ssh key
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: $SERVER_IPV4
+          host: ${{ env.SERVER_IPV4_ADDR }}
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
