@@ -40,19 +40,6 @@ jobs:
           # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
           hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
 
-      - uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
-      - run: ssh root@$SERVER_IPV4 touch validate_working
-      - run: ssh root@$SERVER_IPV4 ls
-
-      - name: Set server IP
-        run: echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
-      - name: Set sha
-        run: echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
-
       - uses: JasonEtco/create-an-issue@v2.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,50 +48,75 @@ jobs:
             filename: .github/testnet.md
             update_existing: true
 
+      - run: |
+          mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
+          ssh root@$SERVER_IPV4 touch validate_working
+          ssh root@$SERVER_IPV4 ls
+
+      - name: Set server IP & Sha
+        run: |
+          echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
+          echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
+
+      - name: executing remote ssh commands using ssh key
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: $SERVER_IPV4
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            whoami
+            echo "whoami: $(whoami)"
+
+      # - uses: webfactory/ssh-agent@v0.4.1
+      #   with:
+      #     ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
       # testnet time
       # - run: git clone https://github.com/Reecepbcups/livetestnetchain
       # sudo add-apt-repository ppa:longsleep/golang-backports -y
       # sudo DEBIAN_FRONTEND=noninteractive apt -y install make golang-1.22 gcc jq bison
       # alias go=/usr/lib/go-1.22/bin/go
-      - run: |
-          ssh root@$SERVER_IPV4 echo "whoami: $(whoami)" # root pls
-          ssh root@$SERVER_IPV4 sudo apt-get update
-          ssh root@$SERVER_IPV4 sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
+      # - run: |
+      #     ssh root@$SERVER_IPV4 echo "whoami: $(whoami)" # root pls
+      #     ssh root@$SERVER_IPV4 sudo apt-get update
+      #     ssh root@$SERVER_IPV4 sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
 
-          # Go install
-          ssh root@$SERVER_IPV4 wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz
-          ssh root@$SERVER_IPV4 sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
-          ssh root@$SERVER_IPV4 echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
-          ssh root@$SERVER_IPV4 export PATH=$PATH:/usr/local/go/bin
+      #     # Go install
+      #     ssh root@$SERVER_IPV4 wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz
+      #     ssh root@$SERVER_IPV4 sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.22.1.linux-amd64.tar.gz
+      #     ssh root@$SERVER_IPV4 echo "export PATH=$PATH:/usr/local/go/bin" >> ~/.bashrc
+      #     ssh root@$SERVER_IPV4 export PATH=$PATH:/usr/local/go/bin
 
-          # Docker.
-          # sudo install -m 0755 -d /etc/apt/keyrings
-          # sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          # sudo chmod a+r /etc/apt/keyrings/docker.asc
-          # echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          # sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker.io
+      #     # Docker.
+      #     # sudo install -m 0755 -d /etc/apt/keyrings
+      #     # sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      #     # sudo chmod a+r /etc/apt/keyrings/docker.asc
+      #     # echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+      #     # sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker.io
 
-          ssh root@$SERVER_IPV4 sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y containerd.io
-          ssh root@$SERVER_IPV4 sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose
-          ssh root@$SERVER_IPV4 sudo apt-get update
+      #     ssh root@$SERVER_IPV4 sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y containerd.io
+      #     ssh root@$SERVER_IPV4 sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose
+      #     ssh root@$SERVER_IPV4 sudo apt-get update
 
-          # install local-ic
-          ssh root@$SERVER_IPV4 wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
-          ssh root@$SERVER_IPV4 sudo sudo mv local-ic /usr/bin
+      #     # install local-ic
+      #     ssh root@$SERVER_IPV4 wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
+      #     ssh root@$SERVER_IPV4 sudo sudo mv local-ic /usr/bin
 
-          ssh root@$SERVER_IPV4 git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
-          ssh root@$SERVER_IPV4 go build
-          ssh root@$SERVER_IPV4 sudo mv heighliner /usr/bin && chmod +x /usr/bin/heighliner
+      #     ssh root@$SERVER_IPV4 git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
+      #     ssh root@$SERVER_IPV4 go build
+      #     ssh root@$SERVER_IPV4 sudo mv heighliner /usr/bin && chmod +x /usr/bin/heighliner
 
-          ssh root@$SERVER_IPV4 cd ~/
+      #     ssh root@$SERVER_IPV4 cd ~/
 
-          # Clone
-          ssh root@$SERVER_IPV4 git clone https://github.com/${{ github.repository }}.git chain && cd chain
+      #     # Clone
+      #     ssh root@$SERVER_IPV4 git clone https://github.com/${{ github.repository }}.git chain && cd chain
 
-          # builds the docker image
-          ssh root@$SERVER_IPV4 make local-image
+      #     # builds the docker image
+      #     ssh root@$SERVER_IPV4 make local-image
 
-          # start the testnet (run in a screen ?)
-          ssh root@$SERVER_IPV4 local-ic chains # just debugging
-          ssh root@$SERVER_IPV4 sudo screen -S testnet -d -m local-ic start ${{env.TESTNET_FILE}} --api-address=0.0.0.0 --auth-key=""
-          # sudo -u root screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --auth-key=""
+      #     # start the testnet (run in a screen ?)
+      #     ssh root@$SERVER_IPV4 local-ic chains # just debugging
+      #     ssh root@$SERVER_IPV4 sudo screen -S testnet -d -m local-ic start ${{env.TESTNET_FILE}} --api-address=0.0.0.0 --auth-key=""
+      #     # sudo -u root screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --auth-key=""
