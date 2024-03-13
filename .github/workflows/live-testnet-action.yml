@@ -27,7 +27,7 @@ jobs:
 
       - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
-          server-name: "gh-actions-server-1" # no spaces here. Use tag/commit name
+          server-name: "gh-actions-tn-${{github.sha}}"
           server-image: "ubuntu-22.04"
           server-type: "cpx21"
           ssh-key-name: "reece-hetzner"
