@@ -48,10 +48,7 @@ jobs:
             filename: .github/testnet.md
             update_existing: true
 
-      - run: |
-          mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
-          ssh root@$SERVER_IPV4 touch validate_working
-          ssh root@$SERVER_IPV4 ls
+      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
 
       - name: Set server IP & Sha
         run: |
