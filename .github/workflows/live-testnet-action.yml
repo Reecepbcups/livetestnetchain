@@ -91,11 +91,11 @@ jobs:
 
           # install local-ic
           wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
-          sudo mv local-ic /usr/bin
+          sudo sudo mv local-ic /usr/bin
 
           git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
           go build
-          mv heighliner /usr/bin && chmod +x /usr/bin/heighliner
+          sudo mv heighliner /usr/bin && chmod +x /usr/bin/heighliner
 
           cd ~/
 
