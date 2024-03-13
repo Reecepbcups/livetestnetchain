@@ -11,43 +11,46 @@ concurrency:
 env:
     GO_VERSION: 1.21.0
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
         # TODO: shut down any current instances?
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
-        with:
-          server-name: "gh-actions-server-1" # no spaces here. Use tag/commit name
-          server-image: "ubuntu-22.04"
-          server-type: "cpx21"
-          ssh-key-name: "reece-hetzner"
-          delete-server: false
-          # may need to do floating IPs for shared use & static IP usage?
-          startup-timeout: 40000 # ms
-          # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
-          hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
+    #   - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
+    #     with:
+    #       server-name: "gh-actions-server-1" # no spaces here. Use tag/commit name
+    #       server-image: "ubuntu-22.04"
+    #       server-type: "cpx21"
+    #       ssh-key-name: "reece-hetzner"
+    #       delete-server: false
+    #       # may need to do floating IPs for shared use & static IP usage?
+    #       startup-timeout: 40000 # ms
+    #       # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
+    #       hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
 
-      - uses: webfactory/ssh-agent@v0.4.1
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+    #   - uses: webfactory/ssh-agent@v0.4.1
+    #     with:
+    #       ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
-      - run: ssh root@$SERVER_IPV4 touch tim_was_here
-      - run: ssh root@$SERVER_IPV4 ls
+    #   - run: mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
+    #   - run: ssh root@$SERVER_IPV4 touch tim_was_here
+    #   - run: ssh root@$SERVER_IPV4 ls
+
+      - run: SERVER_IPV4=1.2.3.4
+      - run: GITHUB_SHA=51bfbb052e58c4e5ad6c773a8123dde8ef082fc2
 
       - name: Set server IP
         run: echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
       - name: Set sha
         run: echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
 
-
-
-    #   create an issue with the server IPV4 for the commit
-      - uses: actions/checkout@v3
       - uses: JasonEtco/create-an-issue@v2.9.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

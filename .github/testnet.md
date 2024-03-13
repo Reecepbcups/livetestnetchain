@@ -1,5 +1,5 @@
 ---
-title: New Testnet {{ date | date('dddd, MMMM Do') }}
+title: New Testnet {{ date | date('dddd MMMM Do') }}
 assignees: reecepbcups
 labels: enhancement
 ---
