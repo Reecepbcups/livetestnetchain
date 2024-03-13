@@ -64,9 +64,11 @@ jobs:
       # sudo DEBIAN_FRONTEND=noninteractive apt -y install make golang-1.22 gcc jq bison
       # alias go=/usr/lib/go-1.22/bin/go
       - run: |
+          echo "whoami: $(whoami)"
           sudo su root
+          echo "whoami: $(whoami)"
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison
+          sudo DEBIAN_FRONTEND=noninteractive apt -y install make gcc jq bison ca-certificates curl
 
           # Go install
           wget https://go.dev/dl/go1.22.1.linux-amd64.tar.gz
@@ -75,23 +77,25 @@ jobs:
           export PATH=$PATH:/usr/local/go/bin
 
           # Docker
-          sudo apt-get install ca-certificates curl
-          sudo install -m 0755 -d /etc/apt/keyrings
-          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          sudo chmod a+r /etc/apt/keyrings/docker.asc
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
+          # sudo install -m 0755 -d /etc/apt/keyrings
+          # sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          # sudo chmod a+r /etc/apt/keyrings/docker.asc
+          # echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
           # sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker.io
-          sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io
+
+          sudo DEBIAN_FRONTEND=noninteractive apt-get remove -y containerd.io
+          sudo DEBIAN_FRONTEND=noninteractive apt-get -y install docker.io docker-compose
+          sudo apt-get update
 
           # install local-ic
           wget https://github.com/strangelove-ventures/interchaintest/releases/download/v8.2.0/local-ic && chmod +x local-ic
           sudo mv local-ic /usr/local/bin
 
-          git clone https://github.com/strangelove-ventures/heighliner.git
-          cd heighliner
+          git clone https://github.com/strangelove-ventures/heighliner.git && cd heighliner
           go build
           mv heighliner /usr/local/bin && chmod +x /usr/local/bin/heighliner
+
+          cd ~/
 
           # Clone
           git clone https://github.com/${{ github.repository }}.git chain && cd chain
@@ -101,5 +105,5 @@ jobs:
 
           # start the testnet (run in a screen ?)
           local-ic chains # just debugging
-          sudo -u root screen -S testnet -d -m bash -c 'sleep 1 && local-ic start ${{env.TESTNET_FILE}} --api-address=0.0.0.0 --auth-key=""'
-          # screen -S testnet -d -m bash -c 'sleep 1 && local-ic start ibc-testnet --api-address=0.0.0.0 --auth-key=""'
+          sudo -u root screen -S testnet -d -m local-ic start ${{env.TESTNET_FILE}} --api-address=0.0.0.0 --auth-key=""
+          # sudo -u root screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --auth-key=""
