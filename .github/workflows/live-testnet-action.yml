@@ -22,7 +22,7 @@ jobs:
           server-name: "gh-actions-server-1" # no spaces here. Use tag/commit name
           server-image: "ubuntu-22.04"
           server-type: "cpx21"
-          ssh-key-name: "reecehetzner"
+          ssh-key-name: "reece-hetzner"
           # may need to do floating IPs for shared use?
           startup-timeout: 40000 # ms
           # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
