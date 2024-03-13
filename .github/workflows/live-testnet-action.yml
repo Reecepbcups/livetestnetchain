@@ -97,6 +97,7 @@ jobs:
           # builds the docker image
           make local-image
 
-          # start the testnet
+          # start the testnet (run in a screen ?)
           local-ic chains # just debugging
-          local-ic start ${{env.TESTNET_FILE}}
+          # local-ic start ${{env.TESTNET_FILE}}
+          screen -S testnet -d -m bash -c 'sleep 1 && local-ic start ${{env.TESTNET_FILE}} --api-address=0.0.0.0 --auth-key=""'
