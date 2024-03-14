@@ -1,0 +1,68 @@
+name: fresh full build
+
+# using this to share the same instance on start
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+    GO_VERSION: 1.21.0
+
+permissions:
+  contents: read
+  issues: write
+
+# ssh -o StrictHostKeyChecking=no root@95.217.238.29
+
+jobs:
+  doittoit:
+    runs-on: ubuntu-latest
+    steps:
+      # setup base
+      - uses: actions/checkout@v3
+      - name: 'Setup jq'
+        uses: dcarbone/install-jq-action@v2
+        with:
+          version: '1.7'
+          force: false
+
+      # build and publish package to ghcr (public) with codebaser remaining private
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+
+      - name: Build and push Docker image
+        uses: strangelove-ventures/heighliner-build-action@v0.0.3
+        with:
+          chain: livetestnetchain
+          dockerfile: cosmos
+          registry: ghcr.io/${{ github.repository_owner }}
+          build-target: |
+            cd ..
+            make install
+          local: true
+          build-env: |
+            - BUILD_TAGS=muslc
+          binaries: |
+            - /go/bin/simd
+
+      # - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
+      #   with:
+      #     server-name: "gh-actions-tn-${{github.sha}}"
+      #     server-image: "ubuntu-22.04"
+      #     server-type: "cpx21" # shared
+      #     # server-type: "ccx23" # dedicated
+      #     ssh-key-name: "reece-hetzner"
+      #     delete-server: false
+      #     # may need to do floating IPs for shared use & static IP usage?
+      #     startup-timeout: 40000 # ms
+      #     # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
+      #     hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
