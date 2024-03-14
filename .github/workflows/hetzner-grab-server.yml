@@ -1,0 +1,36 @@
+name: get instances
+
+# using this to share the same instance on start
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+    GO_VERSION: 1.21.0
+
+permissions:
+  contents: read
+  issues: write
+
+# ssh -o StrictHostKeyChecking=no root@95.217.238.29
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+        # TODO: shut down any current instances?
+        # if there is a current instance already running, allow for it to be stopped & re-started? (local-ic not the entire box)
+
+      - uses: actions/checkout@v3
+
+      # stop any running instances currently
+      - uses: 3bit/setup-hcloud@v2
+      - run: |
+          hcloud version
+          hcloud server list --output=json
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
