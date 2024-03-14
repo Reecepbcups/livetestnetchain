@@ -27,10 +27,19 @@ jobs:
 
       - uses: actions/checkout@v3
 
-      # stop any running instances currently
+      - name: 'Setup jq'
+        uses: dcarbone/install-jq-action@v2
+        with:
+          version: '1.7'
+          force: false
+
       - uses: 3bit/setup-hcloud@v2
-      - run: |
+      - name: Hetzner cloud commands
+        run: |
           hcloud version
-          hcloud server list --output=json
+          data=`hcloud server list --output=json | jq -r '.[] | select(.name | startswith("gh-actions-tn"))'`
+          ip_addr=`echo $data | jq -r .public_net.ipv4.ip`
+          name=`echo $data | jq -r .name`
+          echo "IP: $ip_addr, Name: $name"
         env:
           HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
