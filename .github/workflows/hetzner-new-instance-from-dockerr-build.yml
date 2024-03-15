@@ -79,9 +79,9 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64
+          # ${{ env.DOCKER_REGISTRY }}/${{ github.repo }}${{ env.REPO_NAME }}:${{ github.ref }}
           tags: |
             ${{ env.DOCKER_REGISTRY }}/${{ github.repo }}${{ env.REPO_NAME }}:local
-            ${{ env.DOCKER_REGISTRY }}/${{ github.repo }}${{ env.REPO_NAME }}:${{ github.ref }}
 
       # - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
       #   with:
