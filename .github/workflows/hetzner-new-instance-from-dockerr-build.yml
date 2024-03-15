@@ -13,6 +13,7 @@ env:
     GO_VERSION: 1.21.0
     REGISTRY: ghcr.io
     IMAGE_NAME: ${{ github.repository }}
+    REPO_NAME: livetestnetchain
 
 permissions:
   contents: read
@@ -41,7 +42,7 @@ jobs:
         uses: docker/setup-qemu-action@v2
 
       - run: |
-          DOCKER_REGISTRY=`echo "ghcr.io/${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]'`
+          DOCKER_REGISTRY=`echo "${{ env.REGISTRY }}/${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]'`
           echo "DOCKER_REGISTRY=$DOCKER_REGISTRY" >> $GITHUB_ENV
 
       # build and publish package to ghcr (public) with codebaser remaining private
@@ -53,21 +54,34 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
 
-      - name: Build and push Docker image
-        uses: strangelove-ventures/heighliner-build-action@v1.0.0
+      # failed to solve: failed to push ghcr.io/reecepbcups/livetestnetchain:reece-shared-instance: unexpected status from POST request to https://ghcr.io/v2/reecepbcups/livetestnetchain/blobs/uploads/: 403 Forbidden
+      # - name: Build and push Docker image
+      #   uses: strangelove-ventures/heighliner-build-action@v1.0.0
+      #   with:
+      #     # git-ref: ${{ github.base_ref }}
+      #     chain: livetestnetchain
+      #     dockerfile: cosmos
+      #     registry: ${{ env.DOCKER_REGISTRY }}
+      #     build-target: |
+      #       cd ..
+      #       make install
+      #     local: true
+      #     build-env: |
+      #       - BUILD_TAGS=muslc
+      #     binaries: |
+      #       - /go/bin/simd
+
+      - name: Build and push
+        id: build_push_image
+        uses: docker/build-push-action@v5
         with:
-          # git-ref: ${{ github.base_ref }}
-          chain: livetestnetchain
-          dockerfile: cosmos
-          registry: ${{ env.DOCKER_REGISTRY }}
-          build-target: |
-            cd ..
-            make install
-          local: true
-          build-env: |
-            - BUILD_TAGS=muslc
-          binaries: |
-            - /go/bin/simd
+          file: Dockerfile
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.DOCKER_REGISTRY }}/${{ github.repo }}/${{ env.REPO_NAME }}:local
+            ${{ env.DOCKER_REGISTRY }}/${{ github.repo }}/${{ env.REPO_NAME }}:${{ github.ref }}
 
       # - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
       #   with:
