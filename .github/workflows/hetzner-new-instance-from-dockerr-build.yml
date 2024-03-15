@@ -20,6 +20,8 @@ permissions:
 
 # ssh -o StrictHostKeyChecking=no root@95.217.238.29
 
+# settings -> Actiobns -> General -> Workflow permissions -> Read and write
+
 jobs:
   doittoit:
     runs-on: ubuntu-latest
@@ -47,7 +49,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
 
