@@ -1,0 +1,45 @@
+name: get instances
+
+# using this to share the same instance on start
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+    GO_VERSION: 1.21.0
+
+permissions:
+  contents: read
+  issues: write
+
+# ssh -o StrictHostKeyChecking=no root@95.217.238.29
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+        # TODO: shut down any current instances?
+        # if there is a current instance already running, allow for it to be stopped & re-started? (local-ic not the entire box)
+
+      - uses: actions/checkout@v3
+
+      - name: 'Setup jq'
+        uses: dcarbone/install-jq-action@v2
+        with:
+          version: '1.7'
+          force: false
+
+      - uses: 3bit/setup-hcloud@v2
+      - name: Hetzner cloud commands
+        run: |
+          hcloud version
+          data=`hcloud server list --output=json | jq -r '.[] | select(.name | startswith("gh-actions-tn"))'`
+          ip_addr=`echo $data | jq -r .public_net.ipv4.ip`
+          name=`echo $data | jq -r .name`
+          echo "IP: $ip_addr, Name: $name"
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}

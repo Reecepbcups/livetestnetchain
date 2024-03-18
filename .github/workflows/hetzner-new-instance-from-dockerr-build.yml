@@ -1,0 +1,98 @@
+name: fresh full build
+
+# using this to share the same instance on start
+
+on:
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+    GO_VERSION: 1.21.0
+    REGISTRY: ghcr.io
+    IMAGE_NAME: ${{ github.repository }}
+    REPO_NAME: livetestnetchain
+
+# permissions:
+#   contents: read
+#   issues: write
+
+# ssh -o StrictHostKeyChecking=no root@95.217.238.29
+
+# settings -> Actiobns -> General -> Workflow permissions -> Read and write
+
+jobs:
+  doittoit:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+      # setup base
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }} # TODO: make this a workflow variable
+
+      - name: 'Setup jq'
+        uses: dcarbone/install-jq-action@v2
+        with:
+          version: '1.7'
+          force: false
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - run: |
+          DOCKER_REGISTRY=`echo "${{ env.REGISTRY }}/${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]'`
+          echo "DOCKER_REGISTRY=$DOCKER_REGISTRY" >> $GITHUB_ENV
+
+      # build and publish package to ghcr (public) with codebaser remaining private
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+
+      # failed to solve: failed to push ghcr.io/reecepbcups/livetestnetchain:reece-shared-instance: unexpected status from POST request to https://ghcr.io/v2/reecepbcups/livetestnetchain/blobs/uploads/: 403 Forbidden
+      - name: Build and push Docker image
+        uses: strangelove-ventures/heighliner-build-action@v1.0.0
+        with:
+          # git-ref: ${{ github.base_ref }}
+          chain: livetestnetchain
+          dockerfile: cosmos
+          registry: ${{ env.DOCKER_REGISTRY }}
+          build-target: |
+            cd ..
+            make install
+          local: true
+          build-env: |
+            - BUILD_TAGS=muslc
+          binaries: |
+            - /go/bin/simd
+
+      # - name: Build and push
+      #   id: build_push_image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     file: Dockerfile
+      #     context: .
+      #     push: true
+      #     platforms: linux/amd64
+      #     # ${{ env.DOCKER_REGISTRY }}/${{ github.repo }}${{ env.REPO_NAME }}:${{ github.ref }}
+      #     tags: |
+      #       ${{ env.DOCKER_REGISTRY }}/${{ github.repo }}${{ env.REPO_NAME }}:local
+
+      # - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
+      #   with:
+      #     server-name: "gh-actions-tn-${{github.sha}}"
+      #     server-image: "ubuntu-22.04"
+      #     server-type: "cpx21" # shared
+      #     # server-type: "ccx23" # dedicated
+      #     ssh-key-name: "reece-hetzner"
+      #     delete-server: false
+      #     # may need to do floating IPs for shared use & static IP usage?
+      #     startup-timeout: 40000 # ms
+      #     # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
+      #     hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
