@@ -1,7 +1,7 @@
 name: cloud testnet
 
 # How to re-ssh in without known_hosts error
-# ssh -o StrictHostKeyChecking=no root@ip_addres
+# ssh -o StrictHostKeyChecking=no root@ip_address
 
 on:
     push:
