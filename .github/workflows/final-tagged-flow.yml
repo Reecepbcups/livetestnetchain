@@ -1,7 +1,5 @@
 name: Tagged testnet
 
-# ssh -o StrictHostKeyChecking=no root@37.27.42.11
-
 on:
     push:
       tags:
@@ -16,8 +14,11 @@ env:
     REGISTRY: ghcr.io
     IMAGE_NAME: ${{ github.repository }}
     LOCALIC_PORT: 8080
-    # TODO: use github secret instead
+    # TODO: use github secret instead, or leave as default
     LOCALIC_AUTH_KEY: ""
+
+# How to re-ssh in without known_hosts error
+# ssh -o StrictHostKeyChecking=no root@ip_addres
 
 jobs:
   launch-testnet:
@@ -31,17 +32,20 @@ jobs:
           server-image: "ubuntu-22.04"
           # server-type: "cpx21" # shared
           server-type: "ccx23" # dedicated
-          ssh-key-name: "reece-hetzner"
+          ssh-key-name: "reece-hetzner" # TODO: change me!
           delete-server: false
           startup-timeout: 40000 # ms
-          # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
+          # https://github.com/<org>/<repo>/settings/secrets/actions/new
           hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
 
-      - name: Set server address & git sha hash
+      - name: Set env variables
         run: |
           mkdir -p ~/.ssh/ && ssh-keyscan -H $SERVER_IPV4 >> ~/.ssh/known_hosts
           echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
           echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
+          echo "GITHUB_REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+          echo "LOCALIC_AUTH_KEY=${{ secrets.LOCALIC_AUTH_KEY }}" >> $GITHUB_ENV
+
 
       - uses: JasonEtco/create-an-issue@v2.9.2
         env:
