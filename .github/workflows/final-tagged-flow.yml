@@ -44,39 +44,33 @@ jobs:
       - name: Parse tag
         id: tag
         run: |
+          echo ${{ github.ref_name }}
           VERSION=$(echo ${{ github.ref_name }} | sed "s/v//")
-          MAJOR_VERSION=$(echo $VERSION | cut -d '.' -f 1)
-          MINOR_VERSION=$(echo $VERSION | cut -d '.' -f 2)
-          PATCH_VERSION=$(echo $VERSION | cut -d '.' -f 3)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "MAJOR_VERSION=$MAJOR_VERSION" >> $GITHUB_ENV
-          echo "MINOR_VERSION=$MINOR_VERSION" >> $GITHUB_ENV
-          echo "PATCH_VERSION=$PATCH_VERSION" >> $GITHUB_ENV
-
-          echo "TAG=v${{ env.MAJOR_VERSION }}.${{ env.MINOR_VERSION }}.${{ env.PATCH_VERSION }}" >> $GITHUB_ENV
+          echo "$VERSION"
+          exit 0
 
       # build and publish package to ghcr (public) with codebase remaining private
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Log in to the Container registry
+      #   uses: docker/login-action@v2
+      #   with:
+      #     registry: ${{ env.REGISTRY }}
+      #     username: ${{ github.repository_owner }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
 
-      # # TODO: update package to be public in repo settings
-      - name: Build and push Docker image
-        uses: strangelove-ventures/heighliner-build-action@v1.0.0
-        with:
-          # v0.0.1
-          git-ref: ${{ env.TAG }}
-          chain: ${{ env.REPO_NAME}}
-          dockerfile: cosmos
-          registry: ${{ env.DOCKER_REGISTRY }}
-          build-target: |
-            cd ..
-            make install
-          local: true
-          build-env: |
-            - BUILD_TAGS=muslc
-          binaries: |
-            - /go/bin/simd
+      # # # TODO: update package to be public in repo settings
+      # - name: Build and push Docker image
+      #   uses: strangelove-ventures/heighliner-build-action@v1.0.0
+      #   with:
+      #     # v0.0.1
+      #     git-ref: ${{ env.TAG }}
+      #     chain: ${{ env.REPO_NAME}}
+      #     dockerfile: cosmos
+      #     registry: ${{ env.DOCKER_REGISTRY }}
+      #     build-target: |
+      #       cd ..
+      #       make install
+      #     local: true
+      #     build-env: |
+      #       - BUILD_TAGS=muslc
+      #     binaries: |
+      #       - /go/bin/simd
