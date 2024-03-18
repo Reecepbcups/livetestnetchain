@@ -57,7 +57,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # # # TODO: update package to be public in repo settings
+      # TODO: update package to be public in repo settings
       - name: Build and push Docker image
         uses: strangelove-ventures/heighliner-build-action@v1.0.0
         with:
