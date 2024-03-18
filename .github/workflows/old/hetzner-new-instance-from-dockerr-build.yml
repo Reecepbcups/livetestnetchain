@@ -55,7 +55,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
 
-      # failed to solve: failed to push ghcr.io/reecepbcups/livetestnetchain:reece-shared-instance: unexpected status from POST request to https://ghcr.io/v2/reecepbcups/livetestnetchain/blobs/uploads/: 403 Forbidden
+      # # TODO: update package to be public in repo settings
       - name: Build and push Docker image
         uses: strangelove-ventures/heighliner-build-action@v1.0.0
         with:
