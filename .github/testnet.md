@@ -1,8 +1,9 @@
 ---
 title: New Testnet {{ date | date('dddd MMMM Do') }}
-# assignees: reecepbcups
+assignees: myusernamehere
 labels: enhancement
 ---
-Someone just pushed, woo! Here is the server IP: {{ env.SERVER_IPV4_ADDR }}. commit: {{ env.GITHUB_SHA }}
-
-Information {{ env.TESTNET_INFO }}
+Server IP: {{ env.SERVER_IPV4_ADDR }}
+Commit: {{ env.GITHUB_SHA }}
+Tag: {{ github.ref_name }}
+Local-Interchain API: {{ env.SERVER_IPV4_ADDR }}:{{ env.LOCALIC_AUTH_KEY }}

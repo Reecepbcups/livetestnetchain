@@ -1,10 +1,8 @@
-# Launch a testnet after tagging :D
-
 name: Tagged testnet
 
+# ssh -o StrictHostKeyChecking=no root@37.27.42.11
+
 on:
-    # release:
-    #   types: [published, created, edited]
     push:
       tags:
       - 'v[0-9]+.[0-9]+.[0-9]+' # ignore rc
@@ -17,73 +15,27 @@ env:
     GO_VERSION: 1.21.0
     REGISTRY: ghcr.io
     IMAGE_NAME: ${{ github.repository }}
-    # TODO: change this to the name of your repo
-    REPO_NAME: livetestnetchain
+    LOCALIC_PORT: 8080
+    # TODO: use github secret instead
+    LOCALIC_AUTH_KEY: ""
 
 jobs:
-  # This can be its own release job, not required for here (nice to have)
-  # public-testnet-image:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Check out the repo
-  #       uses: actions/checkout@v4
-
-  #     - name: 'Setup jq'
-  #       uses: dcarbone/install-jq-action@v2
-  #       with:
-  #         version: '1.7'
-  #         force: false
-
-  #     - name: Set up QEMU
-  #       uses: docker/setup-qemu-action@v3
-
-  #     # all lowercase ghcr registry
-  #     - run: |
-  #        DOCKER_REGISTRY=`echo "${{ env.REGISTRY }}/${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]'`
-  #        echo "DOCKER_REGISTRY=$DOCKER_REGISTRY" >> $GITHUB_ENV
-
-  #     - name: Parse tag
-  #       id: tag
-  #       run: |
-  #         # v0.0.1
-  #         VERSION=$(echo ${{ github.ref_name }} | sed "s/v//")
-  #         # 0.0.1
-  #         echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-  #     # build and publish package to ghcr (public) with codebase remaining private
-  #     - name: Log in to the Container registry
-  #       uses: docker/login-action@v2
-  #       with:
-  #         registry: ${{ env.REGISTRY }}
-  #         username: ${{ github.repository_owner }}
-  #         password: ${{ secrets.GITHUB_TOKEN }}
-
-  #     # TODO: update package to be public in repo settings
-  #     # TODO: also push up normal ref_name tag (v0.0.1) along with local
-  #     - name: Build and push Docker image
-  #       uses: strangelove-ventures/heighliner-build-action@v1.0.0
-  #       with:
-  #         # v0.0.1
-  #         git-ref: ${{ github.ref_name }}
-  #         # tag as local so the testnet can work as expected
-  #         tag: local
-  #         chain: ${{ env.REPO_NAME}}
-  #         dockerfile: cosmos
-  #         registry: ${{ env.DOCKER_REGISTRY }}
-  #         build-target: |
-  #           cd ..
-  #           make install
-  #         local: true
-  #         binaries: |
-  #           - /go/bin/simd
-  #         build-env: |
-  #           - BUILD_TAGS=muslc
-
   launch-testnet:
-    # needs: public-testnet-image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      # TODO: Future re-use the same instance
+      # - uses: 3bit/setup-hcloud@v2
+      # - name: Hetzner cloud commands
+      #   run: |
+      #     hcloud version
+      #     data=`hcloud server list --output=json | jq -r '.[] | select(.name | startswith("gh-actions-tn"))'`
+      #     ip_addr=`echo $data | jq -r .public_net.ipv4.ip`
+      #     name=`echo $data | jq -r .name`
+      #     echo "IP: $ip_addr, Name: $name"
+      #   env:
+      #     HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
 
       - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
@@ -93,7 +45,6 @@ jobs:
           server-type: "ccx23" # dedicated
           ssh-key-name: "reece-hetzner"
           delete-server: false
-          # may need to do floating IPs for shared use & static IP usage?
           startup-timeout: 40000 # ms
           # https://github.com/Reecepbcups/livetestnetchain/settings/secrets/actions/new
           hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
@@ -120,9 +71,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            whoami
-
-            # nice to have
             function docker-killall() {
               docker kill $(docker ps -q)
             }
@@ -154,4 +102,5 @@ jobs:
 
             # TODO: service file would be 10x better :) (put in ictest local-ic dir for setup too)
             # auth_key should be a github env secret
-            sudo screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --api-port=8080 --auth-key=""
+            sudo screen -S testnet -d -m local-ic start ibc-testnet --api-address=0.0.0.0 --api-port=${{ env.LOCALIC_PORT }} --auth-key=${{ env.LOCALIC_AUTH_KEY }}
+
