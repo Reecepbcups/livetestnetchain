@@ -44,33 +44,35 @@ jobs:
       - name: Parse tag
         id: tag
         run: |
-          echo ${{ github.ref_name }}
+          # v0.0.1
           VERSION=$(echo ${{ github.ref_name }} | sed "s/v//")
-          echo "$VERSION"
-          exit 0
+          # 0.0.1
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       # build and publish package to ghcr (public) with codebase remaining private
-      # - name: Log in to the Container registry
-      #   uses: docker/login-action@v2
-      #   with:
-      #     registry: ${{ env.REGISTRY }}
-      #     username: ${{ github.repository_owner }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # # # TODO: update package to be public in repo settings
-      # - name: Build and push Docker image
-      #   uses: strangelove-ventures/heighliner-build-action@v1.0.0
-      #   with:
-      #     # v0.0.1
-      #     git-ref: ${{ env.TAG }}
-      #     chain: ${{ env.REPO_NAME}}
-      #     dockerfile: cosmos
-      #     registry: ${{ env.DOCKER_REGISTRY }}
-      #     build-target: |
-      #       cd ..
-      #       make install
-      #     local: true
-      #     build-env: |
-      #       - BUILD_TAGS=muslc
-      #     binaries: |
-      #       - /go/bin/simd
+      - name: Build and push Docker image
+        uses: strangelove-ventures/heighliner-build-action@v1.0.0
+        with:
+          # v0.0.1
+          git-ref: ${{ github.ref_name }}
+          # tag as local so the testnet can work as expected
+          tag: local
+          chain: ${{ env.REPO_NAME}}
+          dockerfile: cosmos
+          registry: ${{ env.DOCKER_REGISTRY }}
+          build-target: |
+            cd ..
+            make install
+          local: true
+          build-env: |
+            - BUILD_TAGS=muslc
+          binaries: |
+            - /go/bin/simd
