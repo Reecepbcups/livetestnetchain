@@ -47,7 +47,7 @@ jobs:
           echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
           echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
           echo "GITHUB_REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
-          echo "LOCALIC_AUTH_KEY=${{ env.LOCALIC_AUTH_KEY }}" >> $GITHUB_ENV
+          echo "LOCALIC_PORT=${{ env.LOCALIC_PORT }}" >> $GITHUB_ENV
 
 
       - uses: JasonEtco/create-an-issue@v2.9.2
