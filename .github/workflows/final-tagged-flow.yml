@@ -14,8 +14,10 @@ env:
     REGISTRY: ghcr.io
     IMAGE_NAME: ${{ github.repository }}
     LOCALIC_PORT: 8080
-    # TODO: use github secret instead, or leave as default
-    LOCALIC_AUTH_KEY: ""
+    LOCALIC_AUTH_KEY: "" # TODO: make me a secret
+    HETZNER_SSH_KEY: "reece-hetzner"
+    # HETZNER_MACHINE_TYPE: "cpx21" # shared CPU instance
+    HETZNER_MACHINE_TYPE: "ccx23" # Dedicated
 
 # How to re-ssh in without known_hosts error
 # ssh -o StrictHostKeyChecking=no root@ip_addres
@@ -30,9 +32,8 @@ jobs:
         with:
           server-name: "gh-actions-tn-${{github.ref_name}}"
           server-image: "ubuntu-22.04"
-          # server-type: "cpx21" # shared
-          server-type: "ccx23" # dedicated
-          ssh-key-name: "reece-hetzner" # TODO: change me!
+          server-type: ${{ env.HETZNER_MACHINE_TYPE }}
+          ssh-key-name: ${{ env.HETZNER_SSH_KEY }}
           delete-server: false
           startup-timeout: 40000 # ms
           # https://github.com/<org>/<repo>/settings/secrets/actions/new
@@ -44,7 +45,7 @@ jobs:
           echo "SERVER_IPV4_ADDR=$SERVER_IPV4" >> $GITHUB_ENV
           echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
           echo "GITHUB_REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
-          echo "LOCALIC_AUTH_KEY=${{ secrets.LOCALIC_AUTH_KEY }}" >> $GITHUB_ENV
+          echo "LOCALIC_AUTH_KEY=${{ env.LOCALIC_AUTH_KEY }}" >> $GITHUB_ENV
 
 
       - uses: JasonEtco/create-an-issue@v2.9.2
