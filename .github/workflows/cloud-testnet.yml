@@ -1,12 +1,13 @@
 name: cloud testnet
 
-# How to re-ssh in without known_hosts error
-# ssh -o StrictHostKeyChecking=no root@ip_address
-
 on:
     push:
       tags:
       - 'v[0-9]+.[0-9]+.[0-9]+' # ignore rc
+
+# https://github.com/<org>/<repo>/settings/secrets/actions/new
+# - HCLOUD_TOKEN
+# - SSH_PRIVATE_KEY
 
 env:
     GO_VERSION: 1.21.0
@@ -15,8 +16,8 @@ env:
     LOCALIC_PORT: 8080
     LOCALIC_AUTH_KEY: ""
     HETZNER_SSH_KEY: "reece-hetzner"
-    # HETZNER_MACHINE_TYPE: "cpx21" # shared CPU instance
-    HETZNER_MACHINE_TYPE: "ccx23" # Dedicated
+    # HETZNER_MACHINE_TYPE: "cpx31" # shared 4vCPU ($7/Mo)
+    HETZNER_MACHINE_TYPE: "ccx23" # dedicated 4 CPU 16GB Ram ($25/Mo)
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -38,7 +39,6 @@ jobs:
           ssh-key-name: ${{ env.HETZNER_SSH_KEY }}
           delete-server: false
           startup-timeout: 40000 # ms
-          # https://github.com/<org>/<repo>/settings/secrets/actions/new
           hcloud-token: ${{ secrets.HCLOUD_TOKEN }}
 
       - name: Set env variables
@@ -48,7 +48,6 @@ jobs:
           echo "GITHUB_SHA=${{github.sha}}" >> $GITHUB_ENV
           echo "GITHUB_REF_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
           echo "LOCALIC_PORT=${{ env.LOCALIC_PORT }}" >> $GITHUB_ENV
-
 
       - uses: JasonEtco/create-an-issue@v2.9.2
         env:
