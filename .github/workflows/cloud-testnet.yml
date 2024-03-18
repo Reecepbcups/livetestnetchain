@@ -1,26 +1,28 @@
-name: Tagged testnet
+name: cloud testnet
+
+# How to re-ssh in without known_hosts error
+# ssh -o StrictHostKeyChecking=no root@ip_addres
 
 on:
     push:
       tags:
       - 'v[0-9]+.[0-9]+.[0-9]+' # ignore rc
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
     GO_VERSION: 1.21.0
     REGISTRY: ghcr.io
     IMAGE_NAME: ${{ github.repository }}
     LOCALIC_PORT: 8080
-    LOCALIC_AUTH_KEY: "" # TODO: make me a secret
+    LOCALIC_AUTH_KEY: ""
     HETZNER_SSH_KEY: "reece-hetzner"
     # HETZNER_MACHINE_TYPE: "cpx21" # shared CPU instance
     HETZNER_MACHINE_TYPE: "ccx23" # Dedicated
 
-# How to re-ssh in without known_hosts error
-# ssh -o StrictHostKeyChecking=no root@ip_addres
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+
 
 jobs:
   launch-testnet:
