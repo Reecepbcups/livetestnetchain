@@ -25,18 +25,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # TODO: Future re-use the same instance
-      # - uses: 3bit/setup-hcloud@v2
-      # - name: Hetzner cloud commands
-      #   run: |
-      #     hcloud version
-      #     data=`hcloud server list --output=json | jq -r '.[] | select(.name | startswith("gh-actions-tn"))'`
-      #     ip_addr=`echo $data | jq -r .public_net.ipv4.ip`
-      #     name=`echo $data | jq -r .name`
-      #     echo "IP: $ip_addr, Name: $name"
-      #   env:
-      #     HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
-
       - uses: TimDaub/hetzner-cloud-deploy-server-action@v2
         with:
           server-name: "gh-actions-tn-${{github.ref_name}}"
